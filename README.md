@@ -8,7 +8,7 @@ This search aims to be an improvement of the currently used bitwise filtering, w
 
 The library contains a set of prepared modules to facilitate the formatting and the computation of the co-occurence matrix, as well as an encoding and search module given the parameters of your sample. If you already want to test it on a working example, you can try the jupyter notebook **notebooks/steam_example.ipynb**, which uses a live example from 50.000 Steam samples.
 
-### stimtag object
+### simtag object
 
 A note before starting: during the instatiation of our engine we will immediately need to input the sample list (containing the list of tags for every sample). The format of the sample_list is the following:
 ```
