@@ -28,7 +28,7 @@ class validate():
         return raw_scores, mean_scores
 
 
-    def show_results(self, query_tag_list, raw_scores, filter_results, visualization_type, power=0.6):
+    def show_results(self, query_tag_list, raw_scores, filter_results, visualization_type, power=0.6, visualize=False, return_html=False):
 
         if visualization_type == 'raw':
 
@@ -44,7 +44,8 @@ class validate():
                     html_code += f"<span style='background-color:{color}; color:white'>{word}</span> "
                     # html_code += f"<span style='color:{color}'>{word}</span> "
 
-                display(HTML(html_code))
+                if visualize: display(HTML(html_code))
+                if return_html: return html_code
 
         elif visualization_type == 'mean':
 
@@ -59,4 +60,5 @@ class validate():
                 html_code += f"<span style='background-color:{color}; color:white'>{word}</span> "
                 # html_code += f"<span style='color:{color}'>{word}</span> "
 
-            display(HTML(html_code))
+            if visualize: display(HTML(html_code))
+            if return_html: return html_code
