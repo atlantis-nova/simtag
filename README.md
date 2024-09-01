@@ -1,4 +1,4 @@
-# simtag, soft tag filtering made easy
+# simtag, semantic tag filtering made easy
 
 The following library is based on the following technical article (*WIP), and aims to introduce a new method of **tag search** that uses co-occurrent relationships to maximize the overall relevance of the tags.
 
@@ -55,11 +55,11 @@ As explained in the article, we are using Covariate encoding to retrieve the sam
 sample_vectors = engine.encode_samples(sample_list)
 nbrs = engine.compute_nbrs(sample_vectors, k=5)
 ```
-We can now perform a **soft tag search** on our samples.
+We can now perform a **semantic tag search** on our samples.
 
-## naive soft tag search
+## naive
 
-This format of **soft tag search** assigns an equal weight to each of our query tags:
+This format of **semantic tag search** assigns an equal weight to each of our query tags:
 
 ```
 query_tag_list = [
@@ -97,9 +97,9 @@ The first result (k=5, so there will be other 4 we can explore) looks like it co
  '3D']
 ```
 
-## weighted soft tag search
+## weighted
 
-On the contrary, this format of **soft tag search** assigns a different weight to each of our query tags. Because we are combining the vectors after performing the **covariate encoding** we can easily combine them using different weights:
+On the contrary, this format of **semantic tag search** assigns a different weight to each of our query tags. Because we are combining the vectors after performing the **covariate encoding** we can easily combine them using different weights:
 
 ```
 query_tag_dict = {
@@ -125,7 +125,7 @@ Hopefully, we can see quite clearly how the tags of te returned sample are more 
 
 ## validation
 
-For an algorithm to be effective, needs to be validated. For now, soft search lacks a proper mathematical validation (at first sight, avering similarity scores from M already shows very promising results, but further research is needed for an objective metric backed up by proof). The results are quite intutive when visualized when using a comparative example:
+For an algorithm to be effective, needs to be validated. For now, soft search lacks a proper mathematical validation (at first sight, avering similarity scores from M already shows very promising results, but further research is needed for an objective metric backed up by proof). The results are quite intutive when visualized using a comparative example:
 ```
 query_tag_list = [
     'Simulation', 
@@ -135,25 +135,25 @@ query_tag_list = [
 # used to easily switch between results
 result_index = 0
 ```
-We can compare the relevance (indicated by the strenght of the **red color**) of both hard and soft search using the **customized visualization module**:
+We can compare the relevance (indicated by the strenght of the **red color**) of both traditional and semantic search using the **customized visualization module**:
 ```
-# soft search
+# semantic search
 query_vector = engine.encode_query(query_tag_list=query_tag_list, negative_score=False, j=5)
 soft_filter_results = engine.soft_tag_filtering(nbrs, sample_list, query_vector)
 soft_raw_scores, soft_mean_scores = engine.compute_neighbor_scores(
     soft_filter_results[result_index], query_tag_list, remove_max=False
 )
 
-# hard search
+# traditional search
 hard_filter_results = engine.hard_tag_filtering(sample_list, query_tag_list)
 hard_raw_scores, hard_mean_scores = engine.compute_neighbor_scores(
     hard_filter_results[result_index], query_tag_list, remove_max=False
 )
 ```
 
-#### soft tag search
+#### semantic tag search
 
-Soft search sorts all samples based on the relevance of all tags, in simple terms, it disqualifies samples containing irrelevant tags.
+Semantic tag search sorts all samples based on the relevance of all tags, in simple terms, it disqualifies samples containing irrelevant tags.
 ```
 engine.show_results(
     query_tag_list, soft_raw_scores, soft_filter_results[result_index], visualization_type='mean', power=0.4,
@@ -164,7 +164,7 @@ engine.show_results(
 <!-- github does not allow colors :( -->
 <!-- <span style='background-color:rgb(74,11,0); color:white'>Casual</span> <span style='background-color:rgb(75,11,0); color:white'>Indie</span> <span style='background-color:rgb(127,5,0); color:white'>Exploration</span> <span style='background-color:rgb(84,10,0); color:white'>Atmospheric</span> <span style='background-color:rgb(45,14,0); color:white'>Flight</span> <span style='background-color:rgb(127,5,0); color:white'>Open World</span> <span style='background-color:rgb(124,6,0); color:white'>Simulation</span> <span style='background-color:rgb(39,15,0); color:white'>Experimental</span> -->
 
-#### hard tag search
+#### traditional tag search
 
 We can see how hard search **might** (without additional rules, samples are filtered based on the availability of all tags, and not sorted) return a sample with a higher number of tags, **but many of them may not be relevent**.
 
