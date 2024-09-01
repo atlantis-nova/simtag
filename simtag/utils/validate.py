@@ -1,5 +1,6 @@
 import numpy as np
 import statistics
+from IPython.display import HTML
 
 class validate():
 
@@ -25,3 +26,37 @@ class validate():
         mean_scores = np.array(statistics.mean(mean_scores))
 
         return raw_scores, mean_scores
+
+
+    def show_results(self, query_tag_list, raw_scores, filter_results, visualization_type, power=0.6):
+
+        if visualization_type == 'raw':
+
+            for tag_index in range(len(query_tag_list)):
+                data = list(zip(raw_scores[tag_index], filter_results))
+                tag = query_tag_list[tag_index]
+                html_code = f"{tag}:<br>"
+                for intensity, word in data:
+                    scaled_intensity = intensity ** power
+                    g = int(20 * (1 - scaled_intensity))
+                    r = int(255 * scaled_intensity * 0.7)  # adjust the green component
+                    color = f"rgb({r},{g},0)"
+                    html_code += f"<span style='background-color:{color}; color:white'>{word}</span> "
+                    # html_code += f"<span style='color:{color}'>{word}</span> "
+
+                display(HTML(html_code))
+
+        elif visualization_type == 'mean':
+
+            data = list(zip(np.mean(raw_scores, axis=0), filter_results))
+            tag = query_tag_list
+            html_code = f"{tag}:<br>"
+            for intensity, word in data:
+                scaled_intensity = intensity ** power
+                g = int(20 * (1 - scaled_intensity))
+                r = int(255 * scaled_intensity * 0.7)  # adjust the green component
+                color = f"rgb({r},{g},0)"
+                html_code += f"<span style='background-color:{color}; color:white'>{word}</span> "
+                # html_code += f"<span style='color:{color}'>{word}</span> "
+
+            display(HTML(html_code))
