@@ -160,12 +160,13 @@ engine.show_results(
     visualize=True, return_html=False
 )
 ```
-
-<span style='background-color:rgb(74,11,0); color:white'>Casual</span> <span style='background-color:rgb(75,11,0); color:white'>Indie</span> <span style='background-color:rgb(127,5,0); color:white'>Exploration</span> <span style='background-color:rgb(84,10,0); color:white'>Atmospheric</span> <span style='background-color:rgb(45,14,0); color:white'>Flight</span> <span style='background-color:rgb(127,5,0); color:white'>Open World</span> <span style='background-color:rgb(124,6,0); color:white'>Simulation</span> <span style='background-color:rgb(39,15,0); color:white'>Experimental</span>
+![alt text](files/img_soft-search.png)
+<!-- github does not allow colors :( -->
+<!-- <span style='background-color:rgb(74,11,0); color:white'>Casual</span> <span style='background-color:rgb(75,11,0); color:white'>Indie</span> <span style='background-color:rgb(127,5,0); color:white'>Exploration</span> <span style='background-color:rgb(84,10,0); color:white'>Atmospheric</span> <span style='background-color:rgb(45,14,0); color:white'>Flight</span> <span style='background-color:rgb(127,5,0); color:white'>Open World</span> <span style='background-color:rgb(124,6,0); color:white'>Simulation</span> <span style='background-color:rgb(39,15,0); color:white'>Experimental</span> -->
 
 #### hard tag search
 
-We can see how hard search **might** (without additional rules, samples are filtered based on the availability of all tags, and not sorted) return a sample with a higher number of tags, **but many of them may not be srelevent**.
+We can see how hard search **might** (without additional rules, samples are filtered based on the availability of all tags, and not sorted) return a sample with a higher number of tags, **but many of them may not be relevent**.
 
 ```
 engine.show_results(
@@ -173,5 +174,6 @@ engine.show_results(
     visualize=True, return_html=False
 )
 ```
-
-<span style='background-color:rgb(45,14,0); color:white'>Flight</span> <span style='background-color:rgb(124,6,0); color:white'>Simulation</span> <span style='background-color:rgb(57,13,0); color:white'>VR</span> <span style='background-color:rgb(53,13,0); color:white'>Racing</span> <span style='background-color:rgb(61,13,0); color:white'>Physics</span> <span style='background-color:rgb(127,5,0); color:white'>Open World</span> <span style='background-color:rgb(77,11,0); color:white'>Realistic</span> <span style='background-color:rgb(44,15,0); color:white'>Education</span> <span style='background-color:rgb(127,5,0); color:white'>Exploration</span> <span style='background-color:rgb(17,18,0); color:white'>Jet</span> <span style='background-color:rgb(31,16,0); color:white'>3D Vision</span> <span style='background-color:rgb(69,12,0); color:white'>Relaxing</span> <span style='background-color:rgb(80,10,0); color:white'>3D</span> <span style='background-color:rgb(30,16,0); color:white'>Level Editor</span> <span style='background-color:rgb(29,16,0); color:white'>America</span> <span style='background-color:rgb(85,10,0); color:white'>Singleplayer</span> <span style='background-color:rgb(19,17,0); color:white'>TrackIR</span> <span style='background-color:rgb(76,11,0); color:white'>Early Access</span> <span style='background-color:rgb(75,11,0); color:white'>Indie</span> <span style='background-color:rgb(70,12,0); color:white'>Multiplayer</span>
+![alt text](files/img_hard-search.png)
+<!-- github does not allow colors :( -->
+<!-- <span style='background-color:rgb(45,14,0); color:white'>Flight</span> <span style='background-color:rgb(124,6,0); color:white'>Simulation</span> <span style='background-color:rgb(57,13,0); color:white'>VR</span> <span style='background-color:rgb(53,13,0); color:white'>Racing</span> <span style='background-color:rgb(61,13,0); color:white'>Physics</span> <span style='background-color:rgb(127,5,0); color:white'>Open World</span> <span style='background-color:rgb(77,11,0); color:white'>Realistic</span> <span style='background-color:rgb(44,15,0); color:white'>Education</span> <span style='background-color:rgb(127,5,0); color:white'>Exploration</span> <span style='background-color:rgb(17,18,0); color:white'>Jet</span> <span style='background-color:rgb(31,16,0); color:white'>3D Vision</span> <span style='background-color:rgb(69,12,0); color:white'>Relaxing</span> <span style='background-color:rgb(80,10,0); color:white'>3D</span> <span style='background-color:rgb(30,16,0); color:white'>Level Editor</span> <span style='background-color:rgb(29,16,0); color:white'>America</span> <span style='background-color:rgb(85,10,0); color:white'>Singleplayer</span> <span style='background-color:rgb(19,17,0); color:white'>TrackIR</span> <span style='background-color:rgb(76,11,0); color:white'>Early Access</span> <span style='background-color:rgb(75,11,0); color:white'>Indie</span> <span style='background-color:rgb(70,12,0); color:white'>Multiplayer</span> -->
