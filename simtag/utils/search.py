@@ -67,8 +67,10 @@ class search():
 
 	def hard_tag_filtering(self, sample_list, query_tag_list):
 
-		search_results = [sample for sample in sample_list if all(x in sample for x in query_tag_list)]
-		return search_results
+		indices = [index for index in range(len(sample_list)) if all(x in sample_list[index] for x in query_tag_list)]
+		search_results = [sample_list[x] for x in indices]
+
+		return indices, search_results
 
 
 	def soft_tag_filtering(self, nbrs, sample_list, query_vector):
@@ -77,4 +79,4 @@ class search():
 		indices = indices[0].tolist()
 
 		search_results = [sample_list[x] for x in indices]
-		return search_results
+		return indices, search_results

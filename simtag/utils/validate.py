@@ -28,14 +28,13 @@ class validate():
         return raw_scores, mean_scores
 
 
-    def show_results(self, query_tag_list, raw_scores, filter_results, visualization_type, power=0.6, visualize=False, return_html=False):
+    def show_results(self, query_tag_list, raw_scores, filter_results, visualization_type, power=0.6, title='', visualize=False, return_html=False):
 
         if visualization_type == 'raw':
 
             for tag_index in range(len(query_tag_list)):
                 data = list(zip(raw_scores[tag_index], filter_results))
-                tag = query_tag_list[tag_index]
-                html_code = f"{tag}:<br>"
+                html_code = f"{title}:<br>"
                 for intensity, word in data:
                     scaled_intensity = intensity ** power
                     g = int(20 * (1 - scaled_intensity))
@@ -50,8 +49,7 @@ class validate():
         elif visualization_type == 'mean':
 
             data = list(zip(np.mean(raw_scores, axis=0), filter_results))
-            tag = query_tag_list
-            html_code = f"{tag}:<br>"
+            html_code = f"{title}:<br>"
             for intensity, word in data:
                 scaled_intensity = intensity ** power
                 g = int(20 * (1 - scaled_intensity))

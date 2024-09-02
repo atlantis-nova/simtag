@@ -157,7 +157,7 @@ Semantic tag search sorts all samples based on the relevance of all tags, in sim
 ```
 engine.show_results(
     query_tag_list, soft_raw_scores, soft_filter_results[result_index], visualization_type='mean', power=0.4,
-    visualize=True, return_html=False
+    title=f'{query_tag_list}', visualize=True, return_html=False
 )
 ```
 ![alt text](files/img_soft-search.png)
@@ -171,7 +171,7 @@ We can see how hard search **might** (without additional rules, samples are filt
 ```
 engine.show_results(
     query_tag_list, hard_raw_scores, hard_filter_results[result_index], visualization_type='mean', power=0.4, 
-    visualize=True, return_html=False
+    title=f'{query_tag_list}', visualize=True, return_html=False
 )
 ```
 ![alt text](files/img_hard-search.png)
