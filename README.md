@@ -4,6 +4,8 @@ The following library is based on the following technical article (*WIP), and ai
 
 This search aims to be an improvement of the currently used bitwise filtering, which lacks flexibility in providing alternative results when the **regular search does not provide enough samples**.
 
+![alt text](files/search-comparison.png)
+
 ## using the library
 
 The library contains a set of prepared modules to facilitate the formatting and the computation of the co-occurence matrix, as well as an encoding and search module given the parameters of your sample. If you already want to test it on a working example, you can try the jupyter notebook **notebooks/steam_example.ipynb**, which uses a live example from 50.000 Steam samples.
