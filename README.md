@@ -2,9 +2,11 @@
 
 The following library is based on the following technical article (*WIP), and aims to introduce a new method of **tag search** that uses co-occurrent relationships to maximize the overall relevance of the tags.
 
-This search aims to be an improvement of the currently used bitwise filtering, which lacks flexibility in providing alternative results when the **regular search does not provide enough samples**.
-
 ![alt text](files/search-comparison.png)
+
+This search aims to be an improvement of the currently used bitwise filtering, which lacks flexibility in providing alternative results when the **regular search cannot retrieve enough results**.
+
+![alt text](files/missing-results.png)
 
 ## using the library
 
