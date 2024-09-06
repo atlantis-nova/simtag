@@ -10,7 +10,7 @@ This search aims to be an improvement of the currently used bitwise filtering, w
 
 ## using the library
 
-The library contains a set of prepared modules to facilitate the formatting and the computation of the co-occurence matrix, as well as an encoding and search module given the parameters of your sample. If you already want to test it on a working example, you can try the jupyter notebook **notebooks/steam_example.ipynb**, which uses a live example from 50.000 Steam samples.
+The library contains a set of prepared modules to facilitate the formatting and the computation of the co-occurence matrix, as well as an encoding and search module given the parameters of your sample. If you already want to test it on a working example, you can try the jupyter notebook **notebooks/steam_example.ipynb**, which uses a live example from 40.000 Steam samples.
 
 ### simtag object
 
@@ -35,22 +35,30 @@ We can now use all modules on top of the engine instance.
 
 ### computing the co-occurence matrix
 
-Our next step is to generate the co-occurence matrix (note that I am using **Michelangiolo similarity** as a mean to computing it, which is not a highly scalable option, but the same relationship can be extracted with a variety of more advanced methods, such as neural network - ex. Embeddings), which stores the relationship between existing pair of samples using IoU (Intersection over Union).
+Our next step is to generate the relationship matrix - we have added the option to compute the co-occurence matrix from the library (note that I am using **Michelangiolo similarity** as a mean to computing it, which is not a highly scalable option, but the same relationship can be extracted with a variety of more advanced methods, such as neural network, ex. Embeddings), which stores the relationship between existing pair of samples using IoU (Intersection over Union).
 
 ```
 # if not existing, compute M
-engine.compute_M()
+M, df_M = engine.compute_M()
 processing tags: 100%|██████████| 446/446 [1:18:52<00:00, 10.61s/it]
 ```
 Be mindful of storing the metrix in a parquet file for quick retrieval, considering the long time it may be required to compute it again.
 ```
-engine.M.to_parquet('M.parquet')
+df_M.to_parquet('M.parquet')
 ```
 Once you store the matrix, this process only has to be done once, as you can now retrieve it and store it into engine with the following code:
 ```
 # if already existing, load M
-engine.M = pd.read_parquet('notebooks/files/M.parquet')
+df_M = pd.read_parquet('notebooks/files/M.parquet')
+engine.load_M(df_M)
 ```
+For convenience, we will use df_M to store and retrieve the relational matrix, however, in the backprocess of the library, this will be converted into a numpy array. Essentially, df_M is used as a wrapper for ease of use. The same format can be built using pre-trained encoders (lookt at twitter-news **for a scalable example on 53.300 tags**):
+
+![alt text](files/df_M-example.png)
+
+Let us visualize our co-occurrence matrix **in a much more comprehensible format** (extra code in the steam-games notebook):
+
+![alt text](files/relationship-matrix.png)
 
 ### compute NHSW (navigable hierarchical small world)
 
@@ -67,38 +75,23 @@ This format of **semantic tag search** assigns an equal weight to each of our qu
 
 ```
 query_tag_list = [
-    'Horror',
-    'Combat', 
-    'Open World'
+    'Shooter', 
+    'Fantasy', 
+    'Cartoon'
 ]
 
 # perform search
-query_vector = engine.encode_query(query_tag_list=query_tag_list, j=5)
-search_results = engine.soft_tag_filtering(nbrs, sample_list, query_vector)
-search_results[1]
+query_vector = engine.encode_query(list_tags=query_tag_list)
+indices, search_results = engine.soft_tag_filtering(nbrs, sample_list, query_vector)
+print(search_results[0:5])
 ```
 The first result (k=5, so there will be other 4 we can explore) looks like it contains all our tags, and, additional tags that are related to our query tags.
 ```
-['Open World',
- 'First-Person',
- 'Zombies',
- 'Psychological Horror',
- 'Survival',
- 'Horror',
- 'Survival Horror',
- 'Dark',
- 'Story Rich',
- 'Combat',
- 'Emotional',
- 'Drama',
- 'Thriller',
- 'Puzzle',
- 'Mystery',
- 'Singleplayer',
- 'Exploration',
- 'Investigation',
- 'Linear',
- '3D']
+[
+    ['Action', 'Adventure', 'VR', 'Casual', 'Sports', 'Fantasy', 'Shooter', 'First-Person', 'Cartoon', 'Archery'], 
+    ['Indie', 'Fantasy', 'Fighting', 'Split Screen', 'Cartoon'], 
+    ['Action', 'Adventure', 'First-Person', 'Tower Defense', 'Cartoon', 'Shooter', 'Combat', 'Indie', 'Singleplayer', 'Fantasy', 'FPS', '3D', 'Colorful', 'Linear', 'Story Rich', 'Gore', 'Violent'], 
+    ...
 ```
 
 ## weighted
@@ -107,24 +100,23 @@ On the contrary, this format of **semantic tag search** assigns a different weig
 
 ```
 query_tag_dict = {
-    'Shooter' : 0.3,
-    'Open World' : 0.7,
+    'Shooter' : 0.9,
+    'Open World' : 0.1,
 }
 
 # perform search
-query_vector = engine.encode_query(query_tag_dict=query_tag_dict, j=5)
-search_results = engine.soft_tag_filtering(nbrs, sample_list, query_vector)
-search_results[0]
+query_vector = engine.encode_query(dict_tags=query_tag_dict)
+indices, search_results = engine.soft_tag_filtering(nbrs, sample_list, query_vector)
+search_results[0:5]
 ```
 Hopefully, we can see quite clearly how the tags of te returned sample are more related to Open World, rather than Shooter:
 ```
-['Adventure', 
-'Indie', 
-'Action', 
-'RPG', 
-'Survival', 
-'Open World', 
-'Shooter']
+[
+    ['Action', 'Indie', 'Shooter'],
+    ['Action', 'Indie', 'Shooter'],
+    ['Action', 'Casual', 'Shooter'],
+    ['Indie', 'Casual', 'Shooter'],
+...
 ```
 
 ## validation
@@ -142,14 +134,14 @@ result_index = 0
 We can compare the relevance (indicated by the strenght of the **red color**) of both traditional and semantic search using the **customized visualization module**:
 ```
 # semantic search
-query_vector = engine.encode_query(query_tag_list=query_tag_list, negative_score=False, j=5)
-soft_filter_results = engine.soft_tag_filtering(nbrs, sample_list, query_vector)
+query_vector = engine.encode_query(list_tags=query_tag_list)
+soft_indices, soft_filter_results = engine.soft_tag_filtering(nbrs, sample_list, query_vector)
 soft_raw_scores, soft_mean_scores = engine.compute_neighbor_scores(
-    soft_filter_results[result_index], query_tag_list, remove_max=False
+    soft_filter_results[result_index], query_tag_list, exp=1.3, remove_max=False
 )
 
 # traditional search
-hard_filter_results = engine.hard_tag_filtering(sample_list, query_tag_list)
+hard_indices, hard_filter_results = engine.hard_tag_filtering(sample_list, query_tag_list)
 hard_raw_scores, hard_mean_scores = engine.compute_neighbor_scores(
     hard_filter_results[result_index], query_tag_list, remove_max=False
 )
@@ -160,7 +152,7 @@ hard_raw_scores, hard_mean_scores = engine.compute_neighbor_scores(
 Semantic tag search sorts all samples based on the relevance of all tags, in simple terms, it disqualifies samples containing irrelevant tags.
 ```
 engine.show_results(
-    query_tag_list, soft_raw_scores, soft_filter_results[result_index], visualization_type='mean', power=0.4,
+    query_tag_list, soft_raw_scores, soft_filter_results[result_index], visualization_type='mean', power=0.6,
     title=f'{query_tag_list}', visualize=True, return_html=False
 )
 ```
@@ -174,7 +166,7 @@ We can see how hard search **might** (without additional rules, samples are filt
 
 ```
 engine.show_results(
-    query_tag_list, hard_raw_scores, hard_filter_results[result_index], visualization_type='mean', power=0.4, 
+    query_tag_list, hard_raw_scores, hard_filter_results[result_index], visualization_type='mean', power=0.6, 
     title=f'{query_tag_list}', visualize=True, return_html=False
 )
 ```
