@@ -13,7 +13,35 @@ This search aims to be an improvement of the currently used bitwise filtering, w
 
 ![alt text](files/missing-results.png)
 
-## using the library
+## Covariate Encoding
+
+This algorithm makes use of a new encoding method called Covariate Encoding, which uses an optional PCA module to provide high-scalability to semantic tag filtering.
+
+To provide a better insights on the definitions:
+- **sample**: the list of tags associated with an element present in our database (ex. a steam game). We search through our collection of thousands of existing samples.
+- **query**: the list of tags that the user has input, the objective is to find a sample matching with those tags.
+
+In most encoding algorithms, we encode both queries and samples using the same algorithm. However, each sample contains more than one tag, each represented by a different set of relationships **that we need to capture in a single vector**.
+
+![alt text](image.png)
+
+### PCA module
+
+Our first step is to collect all existing tags into a DataFrame, and extract the respective vectors using a pre-trained neural network. For example, all-MiniLM-L6-v2 converts each tag into a vector of length 384.
+
+We can then transpose the obtained matrix, and compress it: we will initially encode our queries/samples using 1 and 0 for the available tag indexes, resulting in an initial vector of the same length as our initial matrix (53,300). At this point, we can use our pre-computed PCA instance to compress the same sparse vector in 384 dims.
+
+We can then transpose the obtained matrix, and compress it: **we will initially encode our queries/samples using 1 and 0 for the available tag indexes**, resulting in an initial vector of the same length as our initial matrix (53,300). At this point, we can use our pre-computed PCA instance to compress the same sparse vector in 384 dims.
+
+#### encoding samples
+
+In the case of our samples, the process ends just right after the PCA compression (when activated).
+
+#### encoding queries
+
+Our query, however, needs to be encoded differently: we need to take into account the relationships associated with each existing tag. This process is executed by first summing our compressed vector to the compressed matrix (the total of all existing relationships). Now that we have obtained a matrix (384x384), we will need to average it, obtaining our query vector.
+
+# using the library
 
 The library contains a set of prepared modules to facilitate the formatting and the computation of the co-occurence matrix, as well as an encoding and search module given the parameters of your sample. If you already want to test it on a working example, you can try the jupyter notebook **notebooks/steam_example.ipynb**, which uses a live example from 40.000 Steam samples.
 
