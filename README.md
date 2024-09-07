@@ -23,7 +23,7 @@ To provide a better insights on the definitions:
 
 In most encoding algorithms, we encode both queries and samples using the same algorithm. However, each sample contains more than one tag, each represented by a different set of relationships **that we need to capture in a single vector**.
 
-![alt text](image.png)
+![alt text](files/covariate-encoding.png)
 
 ### PCA module
 
