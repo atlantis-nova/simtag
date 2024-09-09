@@ -9,17 +9,17 @@ The following library is based on the following technical article (*WIP), and ai
 
 ![alt text](files/search-comparison.png)
 
-This search aims to be an improvement of the currently used bitwise filtering, which lacks flexibility in providing alternative results when the **regular search cannot retrieve enough results**.
+This search aims to improve the currently used bitwise filtering, which lacks flexibility in providing alternative results when the **regular search cannot retrieve enough samples**.
 
 ![alt text](files/missing-results.png)
 
 ## Covariate Encoding
 
-This algorithm makes use of a new encoding method called Covariate Encoding, which uses an optional PCA module to provide high-scalability to semantic tag filtering.
+This algorithm uses a new encoding method called Covariate Encoding, which employs an optional PCA module to provide high scalability to semantic tag filtering.
 
-To provide a better insights on the definitions:
-- **sample**: the list of tags associated with an element present in our database (ex. a steam game). We search through our collection of thousands of existing samples.
-- **query**: the list of tags that the user has input, the objective is to find a sample matching with those tags.
+To provide better insights into the definitions:
+- **sample**: the list of tags associated with an element in our database (ex. a Steam game). We search through our collection of thousands of existing samples.
+- **query**: the list of tags that the user has input, the objective is to find a sample matching those tags.
 
 In most encoding algorithms, we encode both queries and samples using the same algorithm. However, each sample contains more than one tag, each represented by a different set of relationships **that we need to capture in a single vector**.
 
@@ -47,7 +47,7 @@ The library contains a set of prepared modules to facilitate the formatting and 
 
 ### simtag object
 
-A note before starting: during the instatiation of our engine we will immediately need to input the sample list (containing the list of tags for every sample). The format of the sample_list is the following:
+A note before starting: during the instantiation of our engine we will immediately need to input the sample list (containing the list of tags for every sample). The format of the sample_list is the following:
 ```
 sample_list = [
     ['Adventure', 'Simulation', 'RPG', 'Strategy', 'Singleplayer', 'Classic'],
@@ -154,7 +154,7 @@ Hopefully, we can see quite clearly how the tags of te returned sample are more 
 
 ## validation
 
-For an algorithm to be effective, needs to be validated. For now, soft search lacks a proper mathematical validation (at first sight, avering similarity scores from M already shows very promising results, but further research is needed for an objective metric backed up by proof). The results are quite intutive when visualized using a comparative example:
+For an algorithm to be effective, needs to be validated. For now, soft search lacks a proper mathematical validation (at first sight, averaging similarity scores from M already shows very promising results, but further research is needed for an objective metric backed up by proof). The results are quite intuitive when visualized using a comparative example:
 ```
 query_tag_list = [
     'Simulation', 
@@ -164,7 +164,7 @@ query_tag_list = [
 # used to easily switch between results
 result_index = 0
 ```
-We can compare the relevance (indicated by the strenght of the **red color**) of both traditional and semantic search using the **customized visualization module**:
+We can compare the relevance (indicated by the strength of the **red color**) of both traditional and semantic search using the **customized visualization module**:
 ```
 # semantic search
 query_vector = engine.encode_query(list_tags=query_tag_list)
