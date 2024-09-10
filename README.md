@@ -5,7 +5,7 @@ Published: **2nd September 2024**
 
 # simtag, semantic tag filtering made easy
 
-The following library is based on the following technical article (*WIP), and aims to introduce a new method of **tag search** that uses co-occurrent relationships to maximize the overall relevance of the tags.
+The following library [is based on the following technical article](https://medium.com/towards-data-science/introducing-semantic-tag-filtering-enhancing-retrieval-with-tag-similarity-4f1b2d377a10), and aims to introduce semantic search **in tag filtering** using vector-encoded relationships to maximize the overall relevance of the tags.
 
 ![alt text](files/search-comparison.png)
 
