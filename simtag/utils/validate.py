@@ -29,6 +29,7 @@ class validate():
 
         return raw_scores, mean_scores
     
+    
     def compute_neighbor_scores(self, search_results, query_tag_list, exp=1.5, remove_max=False):
 
         # compute a relationship matrix from the query

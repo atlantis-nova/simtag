@@ -4,19 +4,28 @@ from tqdm import tqdm
 
 class search():
 
+	def compute_nbrs_tags(self, k=1):
+		# we use df_M, because M might have been compressed with PCAs
+		nbrs_tags = NearestNeighbors(n_neighbors=k, metric='cosine').fit(self.df_M['vector_tags'].tolist())
+		self.nbrs_tags = nbrs_tags
+		return nbrs_tags
+		
+
 	def encode_samples(self, sample_list):
 
 		def encode_sample(list_tags):
 			
-			vector = np.zeros(len(self.tag_list))
+			# assign one_hot index to each tag
+			vector_length = len(self.tag_list)
+			onehot_covariate_vector = np.zeros(vector_length)
 			indexes = [self.tag_list.index(x) for x in list_tags]
 			for index in indexes:
-				vector[index] = 1
+				onehot_covariate_vector[index] = 1
 
-			compressed_vector = vector
-			if self.pca_vector_length is not None:
-				compressed_vector = self.pca.transform(vector.reshape(1, len(vector)))[0]
-			return compressed_vector
+			# adjust vector
+			onehot_covariate_vector = self.adjust_oneshot_vector(onehot_covariate_vector)
+			
+			return onehot_covariate_vector
 		
 		row_list = list()
 		for sample in tqdm(sample_list, desc="processing samples"):
@@ -25,81 +34,44 @@ class search():
 		return row_list
 	
 
-	def encode_query(self, list_tags=None, dict_tags=None):
+	def encode_query(self, list_tags=None, dict_tags=None, allow_new_tags=False):
 
+		def find_closest_index(tag, allow_new_tags):
+
+			if tag in self.tag_list:
+				index = self.tag_list.index(tag)
+			else:
+				if allow_new_tags:
+					# for each non-existing tag, find the closest one
+					_, index = self.nbrs_tags.kneighbors([self.model.encode(tag)])
+					index = int(index[0][0])
+				else:
+					raise Exception('input tag is not in list')
+			return index
+
+		# assign one_hot index to each tag
 		vector_length = len(self.tag_list)
-		vector = np.zeros(vector_length)
+		onehot_covariate_vector = np.zeros(vector_length)
+		tags_index = list()
 
-		try:
+		if list_tags is not None:
+			for tag in list_tags:
+				index = find_closest_index(tag, allow_new_tags)
+				onehot_covariate_vector[index] = 1
+				tags_index.append(index)
 
-			if list_tags is not None:
-				indexes = [self.tag_list.index(x) for x in list_tags]
-				for index in indexes:
-					vector[index] = 1
+		elif dict_tags is not None:
+			for tag in [*dict_tags.keys()]:
+				index = find_closest_index(tag, allow_new_tags)
+				onehot_covariate_vector[index] = 1 * dict_tags[tag]
+				tags_index.append(index)
 
-			elif dict_tags is not None:
-				for tag in [*dict_tags.keys()]:
-					index = self.tag_list.index(tag)
-					vector[index] = 1 * dict_tags[tag]
-
-			if self.pca_vector_length is not None:
-				vector = self.pca.transform(vector.reshape(1, vector_length))
-				
-			M_product = self.M+vector
-			M_mean = np.mean(M_product, axis=0) # column average
-			return M_mean
-		except Exception as e:
-			print(e)
-			# raise Exception("one more tags not present in tag_list")
-
-
-	# def encode_samples(self, sample_list):
-
-	# 	row_list = list()
-	# 	for row_index in tqdm(range(len(sample_list)), desc="processing samples"):
-	# 		indexes = [x for x in range(len(self.M.columns)) if self.M.columns[x] in sample_list[row_index]]
-	# 		one_hot = np.zeros((1, len(self.tag_list)))[0]
-	# 		for k in indexes:
-	# 			one_hot[int(k)] = 1
-	# 		row_list.append(one_hot)
-
-	# 	return row_list
-	
-
-	# def encode_query(self, query_tag_list=None, query_tag_dict=None, negative_score=False, j=5):
-
-	# 	def encode_tag(tag, j):
-	# 		arr = np.array([x[0] for x in self.M[[tag]].values.tolist()])
-	# 		# create a new array with the top 5 values, and 0 for the rest
-	# 		top_5_indices = np.argsort(arr)[-j:]
-	# 		vector = np.zeros_like(arr)
-	# 		vector[top_5_indices] = arr[top_5_indices]
-	# 		return vector
-
-	# 	if query_tag_list is not None:
-
-	# 		# compute all vectors
-	# 		tags_vectors = list()
-	# 		for tag in query_tag_list:
-	# 			vector = encode_tag(tag, j)
-	# 			tags_vectors.append(vector)
-		
-	# 	if query_tag_dict is not None:
+		# adjust vector
+		onehot_covariate_vector = self.adjust_oneshot_vector(onehot_covariate_vector)
 			
-	# 		# compute all vectors
-	# 		tags_vectors = list()
-	# 		for tag in [*query_tag_dict.keys()]:
-	# 			vector = encode_tag(tag, j)
-	# 			tags_vectors.append(vector * query_tag_dict[tag])
-				
-	# 	# sum everything into a single vector
-	# 	vector = sum(tags_vectors)
-	# 	if negative_score:
-	# 		vector = np.array([(x, -1)[x==0] for x in vector])
-	# 	# set minimum and maximum
-	# 	vector = np.array([(x, 1)[x>1] for x in vector])
-	# 	vector = np.array([(x, -1)[x<-1] for x in vector])
-	# 	return vector
+		M_product = self.M + onehot_covariate_vector
+		M_mean = np.mean(M_product, axis=0) # column average
+		return M_mean
 
 
 	def show_similar(self, tag):
