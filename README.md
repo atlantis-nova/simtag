@@ -118,7 +118,7 @@ query_tag_list = [
 ]
 
 # perform search
-query_vector = engine.encode_query(list_tags=query_tag_list)
+query_vector = engine.encode_query(list_tags=query_tag_list, allow_new_tags=True)
 indices, search_results = engine.soft_tag_filtering(nbrs, sample_list, query_vector)
 print(search_results[0:5])
 ```
@@ -142,7 +142,7 @@ query_tag_dict = {
 }
 
 # perform search
-query_vector = engine.encode_query(dict_tags=query_tag_dict)
+query_vector = engine.encode_query(dict_tags=query_tag_dict, allow_new_tags=True)
 indices, search_results = engine.soft_tag_filtering(nbrs, sample_list, query_vector)
 search_results[0:5]
 ```
