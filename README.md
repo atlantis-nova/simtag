@@ -62,7 +62,11 @@ Our first step will be to import and initiate the **simtag object**.
 from simtag.filter import simtag_filter
 
 # initiate engine
-engine = simtag_filter(sample_list)
+engine = simtag_filter(
+    sample_list=sample_list, 
+    covariate_vector_length=384, 
+    model_name='sentence-transformers/all-MiniLM-L6-v2'
+)
 ```
 We can now use all modules on top of the engine instance. 
 
