@@ -4,13 +4,6 @@ from tqdm import tqdm
 
 class search():
 
-	def compute_nbrs_tags(self, k=1):
-		# we use df_M, because M might have been compressed with PCAs
-		nbrs_tags = NearestNeighbors(n_neighbors=k, metric='cosine').fit(self.df_M['vector_tags'].tolist())
-		self.nbrs_tags = nbrs_tags
-		return nbrs_tags
-		
-
 	def encode_samples(self, sample_list):
 
 		def encode_sample(list_tags):
@@ -34,7 +27,7 @@ class search():
 		return row_list
 	
 
-	def encode_query(self, list_tags=None, dict_tags=None, allow_new_tags=False):
+	def encode_query(self, list_tags=None, dict_tags=None, allow_new_tags=False, print_new_tags=False):
 
 		def find_closest_index(tag, allow_new_tags):
 
@@ -45,6 +38,10 @@ class search():
 					# for each non-existing tag, find the closest one
 					_, index = self.nbrs_tags.kneighbors([self.model.encode(tag)])
 					index = int(index[0][0])
+
+					if print_new_tags:
+						print(tag, '->', self.tag_list[index])
+
 				else:
 					raise Exception('input tag is not in list')
 			return index
@@ -81,10 +78,16 @@ class search():
 	
 
 	def compute_nbrs(self, vector_list, k):
+	
+		# compute nbrs_tags, necessary to find tags that are not present in our list using semantic similarity
+		# we use df_M, because M might have been expaned or compressed: the knn is on self.M is NOT VALID
+		nbrs_tags = NearestNeighbors(n_neighbors=1, metric='cosine').fit(self.df_M['vector_tags'].tolist())
+		self.nbrs_tags = nbrs_tags
 
 		nbrs = NearestNeighbors(n_neighbors=k, metric='cosine').fit(vector_list)
+
 		return nbrs
-	
+		
 
 	def hard_tag_filtering(self, sample_list, query_tag_list):
 

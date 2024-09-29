@@ -69,6 +69,7 @@ class prep():
 
 		self.df_M = df_M
 		self.M = np.array(df_M['vector_tags'].tolist())
+		# we either compress or expand M
 		self.compute_adjusting_transformation()
 
 
