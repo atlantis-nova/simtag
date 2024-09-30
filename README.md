@@ -1,6 +1,6 @@
 # Please cite
-Algorithm: **Semantic Tag Filtering**
-Author: **Michelangiolo Mazzeschi**
+Algorithm: **Semantic Tag Filtering**<br>
+Author: **Michelangiolo Mazzeschi**<br>
 Published: **2nd September 2024**
 
 # simtag, semantic tag filtering made easy
