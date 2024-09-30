@@ -1,11 +1,11 @@
 # Please cite
-Algorithm: **Semantic Tag Filtering**<br>
-Author: **Michelangiolo Mazzeschi**<br>
+Algorithm: **Semantic Tag Filtering**
+Author: **Michelangiolo Mazzeschi**
 Published: **2nd September 2024**
 
 # simtag, semantic tag filtering made easy
 
-The following library is based on the following technical article (*WIP), and aims to introduce a new method of **tag search** that uses co-occurrent relationships to maximize the overall relevance of the tags.
+The following library [is based on the following technical article](https://medium.com/towards-data-science/introducing-semantic-tag-filtering-enhancing-retrieval-with-tag-similarity-4f1b2d377a10), and aims to introduce semantic search **in tag filtering** using vector-encoded relationships to maximize the overall relevance of the tags.
 
 ![alt text](files/search-comparison.png)
 
@@ -62,7 +62,11 @@ Our first step will be to import and initiate the **simtag object**.
 from simtag.filter import simtag_filter
 
 # initiate engine
-engine = simtag_filter(sample_list)
+engine = simtag_filter(
+    sample_list=sample_list, 
+    covariate_vector_length=384, 
+    model_name='sentence-transformers/all-MiniLM-L6-v2'
+)
 ```
 We can now use all modules on top of the engine instance. 
 
@@ -114,7 +118,7 @@ query_tag_list = [
 ]
 
 # perform search
-query_vector = engine.encode_query(list_tags=query_tag_list)
+query_vector = engine.encode_query(list_tags=query_tag_list, allow_new_tags=True)
 indices, search_results = engine.soft_tag_filtering(nbrs, sample_list, query_vector)
 print(search_results[0:5])
 ```
@@ -138,7 +142,7 @@ query_tag_dict = {
 }
 
 # perform search
-query_vector = engine.encode_query(dict_tags=query_tag_dict)
+query_vector = engine.encode_query(dict_tags=query_tag_dict, allow_new_tags=True)
 indices, search_results = engine.soft_tag_filtering(nbrs, sample_list, query_vector)
 search_results[0:5]
 ```
