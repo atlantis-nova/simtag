@@ -65,9 +65,13 @@ class search():
 
 		# adjust vector
 		onehot_covariate_vector = self.adjust_oneshot_vector(onehot_covariate_vector)
-			
-		M_product = self.M + onehot_covariate_vector
-		M_mean = np.mean(M_product, axis=0) # column average
+		
+		# TODO : this operation is obsolete, we do not need to maintain the full relationship matrix
+		# M_product = self.M + onehot_covariate_vector
+		# M_mean = np.mean(M_product, axis=0) # column average
+
+		M_mean = self.M_mean + onehot_covariate_vector
+		
 		return M_mean
 
 
@@ -93,6 +97,32 @@ class search():
 
 		indices = [index for index in range(len(sample_list)) if all(x in sample_list[index] for x in query_tag_list)]
 		search_results = [sample_list[x] for x in indices]
+
+		return indices, search_results
+
+
+	def jaccard_tag_filtering(self, sample_list, query_tag_list):
+
+		def jaccard_similarity(list1, list2):
+			set1 = set(list1)
+			set2 = set(list2)
+			intersection = set1.intersection(set2)
+			union = set1.union(set2)
+			return len(intersection) / len(union)
+
+		def search_most_similar(sample_list, query_tag_list):
+			similarity_samples = list()
+			for index in range(len(sample_list)):
+				sample = sample_list[index]
+				similarity = jaccard_similarity(query_tag_list, sample)
+				similarity_samples.append([similarity, index, sample])
+			return similarity_samples
+
+		similarity_samples = search_most_similar(sample_list, query_tag_list)
+		similarity_samples = [x for x in similarity_samples if x[0] > 0]
+
+		indices = [x[1] for x in similarity_samples]
+		search_results = [x[2] for x in sorted(similarity_samples)[::-1]]
 
 		return indices, search_results
 

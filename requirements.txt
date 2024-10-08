@@ -39,7 +39,7 @@ pyarrow==17.0.0
 Pygments==2.18.0
 python-dateutil==2.9.0
 pytz==2024.1
-pywin32==306
+# pywin32==306
 PyYAML==6.0.2
 pyzmq==26.2.0
 regex==2024.7.24
