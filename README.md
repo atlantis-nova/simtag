@@ -3,19 +3,24 @@ Algorithm: **Semantic Tag Filtering**<br>
 Author: **Michelangiolo Mazzeschi**<br>
 Published: **2nd September 2024**
 
-# simtag, semantic tag filtering made easy
+# simtag, covariate encoding made easy
 
-The following library [is based on the following technical article](https://medium.com/towards-data-science/introducing-semantic-tag-filtering-enhancing-retrieval-with-tag-similarity-4f1b2d377a10), and aims to introduce semantic search **in tag filtering** using vector-encoded relationships to maximize the overall relevance of the tags.
+We aim introduce the following technologies:
+- **covariate search**
+- **encrypted coviarate search**
+- **covariate tagging**
+
+The following library [is based on the following technical article](https://medium.com/towards-data-science/introducing-semantic-tag-filtering-enhancing-retrieval-with-tag-similarity-4f1b2d377a10), and aims to expand semantic search **from the limited one-to-one approach** into a **many-to-many approach (covariate search)**, using vector-encoded relationships to maximize the overall relevance of the tags.
 
 ![alt text](files/search-comparison.png)
 
-This search aims to improve the currently used bitwise filtering, which lacks flexibility in providing alternative results when the **regular search cannot retrieve enough samples**.
+This search aims to improve the classic **hard filtering** , which lacks flexibility in providing alternative results when the **regular search cannot retrieve enough samples**.
 
 ![alt text](files/missing-results.png)
 
-## Covariate Encoding
+## Covariate Search
 
-This algorithm uses a new encoding method called Covariate Encoding, which employs an optional PCA module to provide high scalability to semantic tag filtering.
+This algorithm uses a new encoding method called **covariate encoding**, which employs an optional PCA module to provide high scalability to semantic tag filtering.
 
 To provide better insights into the definitions:
 - **sample**: the list of tags associated with an element in our database (ex. a Steam game). We search through our collection of thousands of existing samples.
@@ -25,25 +30,19 @@ In most encoding algorithms, we encode both queries and samples using the same a
 
 ![alt text](files/covariate-encoding.png)
 
+This version of the encoding process differs from previous version, as it is now mathematically accurate
+
 ### PCA module
 
-Our first step is to collect all existing tags into a DataFrame, and extract the respective vectors using a pre-trained neural network. For example, all-MiniLM-L6-v2 converts each tag into a vector of length 384.
+The encoding algorithm behaves differently when a PCA module has been applied to the data:
 
-We can then transpose the obtained matrix, and compress it: we will initially encode our queries/samples using 1 and 0 for the available tag indexes, resulting in an initial vector of the same length as our initial matrix (53,300). At this point, we can use our pre-computed PCA instance to compress the same sparse vector in 384 dims.
+![alt text](files/pca-covariate-encoding.png)
 
-We can then transpose the obtained matrix, and compress it: **we will initially encode our queries/samples using 1 and 0 for the available tag indexes**, resulting in an initial vector of the same length as our initial matrix (53,300). At this point, we can use our pre-computed PCA instance to compress the same sparse vector in 384 dims.
+We are still in the process of understanding what are some of the improvements that take plce during this process.
 
-#### encoding samples
+# using the simtag library
 
-In the case of our samples, the process ends just right after the PCA compression (when activated).
-
-#### encoding queries
-
-Our query, however, needs to be encoded differently: we need to take into account the relationships associated with each existing tag. This process is executed by first summing our compressed vector to the compressed matrix (the total of all existing relationships). Now that we have obtained a matrix (384x384), we will need to average it, obtaining our query vector.
-
-# using the library
-
-The library contains a set of prepared modules to facilitate the formatting and the computation of the co-occurence matrix, as well as an encoding and search module given the parameters of your sample. If you already want to test it on a working example, you can try the jupyter notebook **notebooks/steam_example.ipynb**, which uses a live example from 40.000 Steam samples.
+The library contains a set of pre-defined modules to facilitate the formatting and the computation of either the co-occurence or encoded matrix, as well as an encoding and search module given the parameters of your sample. If you already want to test it on a working example, you can try the jupyter notebook **notebooks/steam-games.ipynb**, which uses a live example from 40.000 Steam samples.
 
 ### simtag object
 
@@ -62,9 +61,9 @@ Our first step will be to import and initiate the **simtag object**.
 from simtag.filter import simtag_filter
 
 # initiate engine
+# initiate engine
 engine = simtag_filter(
-    sample_list=sample_list, 
-    covariate_vector_length=384, 
+    sample_list=sample_list,
     model_name='sentence-transformers/all-MiniLM-L6-v2'
 )
 ```
@@ -86,8 +85,8 @@ df_M.to_parquet('M.parquet')
 Once you store the matrix, this process only has to be done once, as you can now retrieve it and store it into engine with the following code:
 ```
 # if already existing, load M
-df_M = pd.read_parquet('notebooks/files/M.parquet')
-engine.load_M(df_M)
+df_M = pd.read_parquet('notebooks/steam-games/M.parquet')
+engine.load_M(df_M, covariate_transformation='dot_product')
 ```
 For convenience, we will use df_M to store and retrieve the relational matrix, however, in the backprocess of the library, this will be converted into a numpy array. Essentially, df_M is used as a wrapper for ease of use. The same format can be built using pre-trained encoders (lookt at twitter-news **for a scalable example on 53.300 tags**):
 
@@ -111,23 +110,22 @@ We can now perform a **semantic tag search** on our samples.
 This format of **semantic tag search** assigns an equal weight to each of our query tags:
 
 ```
-query_tag_list = [
-    'Shooter', 
-    'Fantasy', 
-    'Cartoon'
-]
+query_tag_dict = [ 'Shooter', 'Dark Fantasy', 'Sci-fi']
 
 # perform search
-query_vector = engine.encode_query(list_tags=query_tag_list, allow_new_tags=True)
-indices, search_results = engine.soft_tag_filtering(nbrs, sample_list, query_vector)
-print(search_results[0:5])
+query_vector = engine.encode_query(list_tags=query_tag_dict, allow_new_tags=False, print_new_tags=True)
+indices, search_results = engine.soft_tag_filtering(nbrs_covariate, sample_list, query_vector)
+for s in search_results[0:5]:
+    print(s)
 ```
 The first result (k=5, so there will be other 4 we can explore) looks like it contains all our tags, and, additional tags that are related to our query tags.
 ```
 [
-    ['Action', 'Adventure', 'VR', 'Casual', 'Sports', 'Fantasy', 'Shooter', 'First-Person', 'Cartoon', 'Archery'], 
-    ['Indie', 'Fantasy', 'Fighting', 'Split Screen', 'Cartoon'], 
-    ['Action', 'Adventure', 'First-Person', 'Tower Defense', 'Cartoon', 'Shooter', 'Combat', 'Indie', 'Singleplayer', 'Fantasy', 'FPS', '3D', 'Colorful', 'Linear', 'Story Rich', 'Gore', 'Violent'], 
+    ['Action', 'FPS', 'Sci-fi', 'Shooter']
+    ['Action', 'Third-Person Shooter', 'Sci-fi', 'Aliens', 'Space', 'Great Soundtrack', 'Shooter', 'Atmospheric', 'Futuristic']
+    ['Action', 'FPS', 'Sci-fi', 'Shooter', 'First-Person', 'Singleplayer', 'Space', 'Difficult']
+    ['Action', 'Shooter', 'Sci-fi', 'Classic', 'First-Person', 'FPS', 'Arcade']
+    ['Action', 'FPS', 'Shooter', 'Singleplayer', 'First-Person', 'Arena Shooter', 'Futuristic', 'PvE', 'Robots', 'Sci-fi', 'Difficult']
     ...
 ```
 
@@ -137,76 +135,24 @@ On the contrary, this format of **semantic tag search** assigns a different weig
 
 ```
 query_tag_dict = {
-    'Shooter' : 0.9,
-    'Open World' : 0.1,
+    'Voxel' : 0.8,
+    'Shooter' : 0.2,
+    'Open World' : 0.6,
 }
 
 # perform search
-query_vector = engine.encode_query(dict_tags=query_tag_dict, allow_new_tags=True)
-indices, search_results = engine.soft_tag_filtering(nbrs, sample_list, query_vector)
-search_results[0:5]
+query_vector = engine.encode_query(dict_tags=query_tag_dict)
+indices, search_results = engine.soft_tag_filtering(nbrs_covariate, sample_list, query_vector)
+for s in search_results[0:5]:
+    print(s)
 ```
 Hopefully, we can see quite clearly how the tags of te returned sample are more related to Open World, rather than Shooter:
 ```
 [
-    ['Action', 'Indie', 'Shooter'],
-    ['Action', 'Indie', 'Shooter'],
-    ['Action', 'Casual', 'Shooter'],
-    ['Indie', 'Casual', 'Shooter'],
+    ['Adventure', 'Action', 'Simulation', 'Open World', 'Survival', 'Voxel', 'Sci-fi', 'Early Access']
+    ['Open World', 'Massively Multiplayer', 'Building', 'Space Sim', 'Simulation', 'Sandbox', 'Space', 'Sci-fi', 'Action', 'Early Access', 'FPS', 'Voxel', 'Crafting', 'Destruction', 'Programming', 'Exploration', 'Robots', 'Multiplayer', 'Open World Survival Craft', 'First-Person']
+    ['Early Access', 'Adventure', 'Sandbox', 'MMORPG', 'Voxel', 'Crafting', 'Base-Building', 'Massively Multiplayer', 'Procedural Generation', 'Action RPG', 'FPS', 'Third-Person Shooter', 'Colorful', 'First-Person', 'Third Person', 'Open World', 'Character Customization', 'Combat', 'Inventory Management', 'PvE']
+    ['Strategy', 'Action', 'Adventure', 'Simulation', 'Survival', 'Open World', 'Voxel', 'Sci-fi', 'FPS']
+    ['Survival', 'Zombies', 'Voxel', 'Open World', 'Open World Survival Craft', 'Multiplayer', 'Post-apocalyptic', 'Base-Building', 'Online Co-Op', 'Exploration', 'Simulation', 'Sandbox', 'Building', 'Strategy', 'Character Customization', 'FPS', 'Procedural Generation', 'Tower Defense', 'Action', 'Early Access']
 ...
 ```
-
-## validation
-
-For an algorithm to be effective, needs to be validated. For now, soft search lacks a proper mathematical validation (at first sight, averaging similarity scores from M already shows very promising results, but further research is needed for an objective metric backed up by proof). The results are quite intuitive when visualized using a comparative example:
-```
-query_tag_list = [
-    'Simulation', 
-    'Exploration',
-    'Open World'
-]
-# used to easily switch between results
-result_index = 0
-```
-We can compare the relevance (indicated by the strength of the **red color**) of both traditional and semantic search using the **customized visualization module**:
-```
-# semantic search
-query_vector = engine.encode_query(list_tags=query_tag_list)
-soft_indices, soft_filter_results = engine.soft_tag_filtering(nbrs, sample_list, query_vector)
-soft_raw_scores, soft_mean_scores = engine.compute_neighbor_scores(
-    soft_filter_results[result_index], query_tag_list, exp=1.3, remove_max=False
-)
-
-# traditional search
-hard_indices, hard_filter_results = engine.hard_tag_filtering(sample_list, query_tag_list)
-hard_raw_scores, hard_mean_scores = engine.compute_neighbor_scores(
-    hard_filter_results[result_index], query_tag_list, remove_max=False
-)
-```
-
-#### semantic tag search
-
-Semantic tag search sorts all samples based on the relevance of all tags, in simple terms, it disqualifies samples containing irrelevant tags.
-```
-engine.show_results(
-    query_tag_list, soft_raw_scores, soft_filter_results[result_index], visualization_type='mean', power=0.6,
-    title=f'{query_tag_list}', visualize=True, return_html=False
-)
-```
-![alt text](files/img_soft-search.png)
-<!-- github does not allow colors :( -->
-<!-- <span style='background-color:rgb(74,11,0); color:white'>Casual</span> <span style='background-color:rgb(75,11,0); color:white'>Indie</span> <span style='background-color:rgb(127,5,0); color:white'>Exploration</span> <span style='background-color:rgb(84,10,0); color:white'>Atmospheric</span> <span style='background-color:rgb(45,14,0); color:white'>Flight</span> <span style='background-color:rgb(127,5,0); color:white'>Open World</span> <span style='background-color:rgb(124,6,0); color:white'>Simulation</span> <span style='background-color:rgb(39,15,0); color:white'>Experimental</span> -->
-
-#### traditional tag search
-
-We can see how hard search **might** (without additional rules, samples are filtered based on the availability of all tags, and not sorted) return a sample with a higher number of tags, **but many of them may not be relevent**.
-
-```
-engine.show_results(
-    query_tag_list, hard_raw_scores, hard_filter_results[result_index], visualization_type='mean', power=0.6, 
-    title=f'{query_tag_list}', visualize=True, return_html=False
-)
-```
-![alt text](files/img_hard-search.png)
-<!-- github does not allow colors :( -->
-<!-- <span style='background-color:rgb(45,14,0); color:white'>Flight</span> <span style='background-color:rgb(124,6,0); color:white'>Simulation</span> <span style='background-color:rgb(57,13,0); color:white'>VR</span> <span style='background-color:rgb(53,13,0); color:white'>Racing</span> <span style='background-color:rgb(61,13,0); color:white'>Physics</span> <span style='background-color:rgb(127,5,0); color:white'>Open World</span> <span style='background-color:rgb(77,11,0); color:white'>Realistic</span> <span style='background-color:rgb(44,15,0); color:white'>Education</span> <span style='background-color:rgb(127,5,0); color:white'>Exploration</span> <span style='background-color:rgb(17,18,0); color:white'>Jet</span> <span style='background-color:rgb(31,16,0); color:white'>3D Vision</span> <span style='background-color:rgb(69,12,0); color:white'>Relaxing</span> <span style='background-color:rgb(80,10,0); color:white'>3D</span> <span style='background-color:rgb(30,16,0); color:white'>Level Editor</span> <span style='background-color:rgb(29,16,0); color:white'>America</span> <span style='background-color:rgb(85,10,0); color:white'>Singleplayer</span> <span style='background-color:rgb(19,17,0); color:white'>TrackIR</span> <span style='background-color:rgb(76,11,0); color:white'>Early Access</span> <span style='background-color:rgb(75,11,0); color:white'>Indie</span> <span style='background-color:rgb(70,12,0); color:white'>Multiplayer</span> -->

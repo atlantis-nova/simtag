@@ -1,16 +1,27 @@
 from sklearn.neighbors import NearestNeighbors
 import numpy as np
 from tqdm import tqdm
+from functools import reduce
 
 class search():
 
-	def encode_samples(self, sample_list):
+
+	def quantize(self, arr):
+		# scale the array to the range of int8 (-127 to 127)
+		scaled_arr = (arr - arr.min()) / (arr.max() - arr.min()) * 254 - 127
+		rounded_arr = np.round(scaled_arr)
+		quantized_arr = rounded_arr.astype(np.int8)
+		return quantized_arr
+
+
+	def encode_samples(self, sample_list, quantize_samples=False, show_progress=True):
 
 		def encode_sample(list_tags):
 			
 			# assign one_hot index to each tag
 			vector_length = len(self.tag_list)
 			onehot_covariate_vector = np.zeros(vector_length)
+			
 			indexes = [self.tag_list.index(x) for x in list_tags]
 			for index in indexes:
 				onehot_covariate_vector[index] = 1
@@ -20,11 +31,19 @@ class search():
 			
 			return onehot_covariate_vector
 		
-		row_list = list()
-		for sample in tqdm(sample_list, desc="processing samples"):
-			row_list.append(encode_sample(sample))
+		if show_progress==True:
+			disable_progress=False
+		elif show_progress==False:
+			disable_progress=True
+		
+		samples_encoded = list()
+		for sample_encoded in tqdm(sample_list, desc="processing samples", disable=disable_progress):
+			samples_encoded.append(encode_sample(sample_encoded))
 
-		return row_list
+		if quantize_samples:
+			samples_encoded = [self.quantize(x) for x in samples_encoded]
+
+		return samples_encoded
 	
 
 	def encode_query(self, list_tags=None, dict_tags=None, allow_new_tags=False, print_new_tags=False):
@@ -45,7 +64,7 @@ class search():
 				else:
 					raise Exception('input tag is not in list')
 			return index
-
+		
 		# assign one_hot index to each tag
 		vector_length = len(self.tag_list)
 		onehot_covariate_vector = np.zeros(vector_length)
@@ -63,16 +82,14 @@ class search():
 				onehot_covariate_vector[index] = 1 * dict_tags[tag]
 				tags_index.append(index)
 
-		# adjust vector
+		# adjust vector: compress or expand
 		onehot_covariate_vector = self.adjust_oneshot_vector(onehot_covariate_vector)
 		
 		# TODO : this operation is obsolete, we do not need to maintain the full relationship matrix
 		# M_product = self.M + onehot_covariate_vector
 		# M_mean = np.mean(M_product, axis=0) # column average
-
-		M_mean = self.M_mean + onehot_covariate_vector
 		
-		return M_mean
+		return onehot_covariate_vector
 
 
 	def show_similar(self, tag):
@@ -93,12 +110,19 @@ class search():
 		return nbrs
 		
 
-	def hard_tag_filtering(self, sample_list, query_tag_list):
+	def hard_tag_filtering(self, tag2index, indexed_sample_list, query_tag_list, search_type):
 
-		indices = [index for index in range(len(sample_list)) if all(x in sample_list[index] for x in query_tag_list)]
-		search_results = [sample_list[x] for x in indices]
+		target_values = [tag2index[x] for x in query_tag_list]
 
-		return indices, search_results
+		# Apply the filter using NumPy's vectorized operations
+		if search_type == 'AND':
+			mask = reduce(np.logical_and, (np.isin(indexed_sample_list, val).any(axis=1) for val in target_values))
+
+		elif search_type == 'OR':
+			mask = reduce(np.logical_or, (np.isin(indexed_sample_list, val).any(axis=1) for val in target_values))
+
+		indices = np.where(mask)[0]
+		return indices
 
 
 	def jaccard_tag_filtering(self, sample_list, query_tag_list):
