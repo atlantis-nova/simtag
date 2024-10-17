@@ -1,9 +1,9 @@
 # Please cite
-Algorithm: **Semantic Tag Filtering**<br>
+Algorithm: **Covariate Search**<br>
 Author: **Michelangiolo Mazzeschi**<br>
 Published: **2nd September 2024**
 
-# simtag, covariate encoding made easy
+# simtag, covariate search made easy
 
 We aim introduce the following technologies:
 - **covariate search**
