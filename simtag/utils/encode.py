@@ -47,7 +47,8 @@ class encode():
 		if quantize_samples:
 			samples_encoded = [self.quantize(x) for x in samples_encoded]
 
-		return samples_encoded
+		# we convert list to numpy array
+		return np.array(samples_encoded)
 		
 
 	def encode_query(self, list_tags=None, dict_tags=None, allow_new_tags=False, print_new_tags=False, skip_adjust=False):
