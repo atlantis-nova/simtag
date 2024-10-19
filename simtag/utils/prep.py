@@ -80,12 +80,12 @@ class prep():
 				tag_vector = M[self.tag2index[tag_name]]
 				tag_index = self.search_index(tag_vector, index_cluster_centers, k=1)[0]
 				tag_pointers[tag_name] = tag_index
+				M = cluster_centers
 
 		else:
 			if verbose : print('clustering is not efficient, returning regular tags')
 			tag_pointers = {self.tag_list[index]:index for index in range(len(self.tag_list))}
-
-		M = cluster_centers
+		
 		if quantize_M == True:
 			M = quantize_embeddings(
 				M,
