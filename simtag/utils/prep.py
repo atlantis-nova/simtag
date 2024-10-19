@@ -1,55 +1,17 @@
-import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from sklearn.decomposition import PCA
-from sentence_transformers import SentenceTransformer
+import plotly.express as px
+from sklearn.cluster import KMeans
+from collections import Counter
 from sentence_transformers.quantization import quantize_embeddings
-from sklearn.feature_extraction.text import TfidfVectorizer
 import warnings
 
-tqdm.pandas()
+warnings.simplefilter("ignore")
 warnings.filterwarnings("ignore", category=UserWarning, module="joblib.*")
 
 class prep():
 	
-	
-	def compute_M(self, method=None):
-		
-		if method == 'encoding':
-			df_M = pd.DataFrame(self.tag_list)
-			df_M.columns = ['tags']
-			df_M['vector_tags'] = df_M['tags'].progress_apply(lambda x : self.encode(x).tolist())
-			M = np.array(df_M['vector_tags'].tolist())
-
-		elif method == 'co-occurrence':
-			# compute co-occurence matrix
-			M = list()
-			for tag_col in tqdm(self.tag_list, desc="Processing tags"):
-				M_col = []
-				for tag_row in self.tag_list:
-					if tag_row == tag_col:
-						M_col.append(1)
-					else:
-						# get all samples that have this tag
-						total_A = len([x for x in self.sample_list if tag_row in x])
-						total_B = len([x for x in self.sample_list if tag_col in x])
-						total_AB = len([x for x in self.sample_list if (tag_row in x) and (tag_col in x)])
-						score = total_AB/(total_A + total_B - total_AB)
-						# print(tag_row, tag_col, score)
-						M_col.append(score)
-				M.append(M_col)
-			# raw vectors
-			M = np.array(M)
-			# dataframe with tags
-			df_M = pd.DataFrame([self.tag_list, M]).T
-			df_M.columns = ['tags', 'vector_tags']
-
-		# store data
-		self.M = M
-		self.df_M = df_M
-		return self.M, self.df_M
-	
-
 	def compute_optimal_components(self, threshold=0.95):
 		
 		# ex. 0.95 for 95% explained variance
@@ -59,6 +21,78 @@ class prep():
 		optimal_components = np.argmax(cum_sum >= threshold) + 1
 
 		return optimal_components
+
+
+	def compute_optimal_M(self, percentile_threshold=95, n_clusters=1000, quantize_M=False, visualize=False, verbose=False):
+		"""
+		Compress the one_hot vector into a smaller set of clusters
+		"""
+		tag_vectors = list()
+		for tag_index in tqdm(range(len(self.tag_list)), disable=False):
+			tag = self.tag_list[tag_index]
+			vector = self.model.encode(tag)
+			tag_vectors.append(vector)
+		M = np.array(tag_vectors)
+	
+		# the process performs the clustering only the top filtered tags
+		dict1 = dict(Counter(tag for game_tags in self.sample_list for tag in game_tags))
+
+		if verbose : print('filering top tags by percentile_threshold')
+		dict1_indexes = {self.tag2index[key]:dict1[key] for key in dict1.keys()}
+		data_indexes = list(dict1_indexes.items())
+		percentile = np.percentile([x[1] for x in data_indexes], percentile_threshold)
+		filtered_data_indexes = [x for x in data_indexes if x[1] >= percentile]
+		filtered_data_indexes.sort(key=lambda x: x[1], reverse=True)
+
+		if visualize:
+			dict1_tags = {key:dict1[key] for key in dict1.keys()}
+			data_tags = list(dict1_tags.items())
+			percentile = np.percentile([x[1] for x in data_tags], percentile_threshold)
+			filtered_data_tags = [x for x in data_tags if x[1] >= percentile]
+			filtered_data_tags.sort(key=lambda x: x[1], reverse=True)
+
+			max_plot = 500
+			fig = px.bar(x=[x[0] for x in filtered_data_tags[0:max_plot]], y=[x[1] for x in filtered_data_tags[0:max_plot]], 
+				labels={'x': 'Category', 'y': 'Frequency'}, 
+				title='Histogram of Frequencies (95th percentile and above)')
+			fig.show()
+		
+		data = list(dict1_indexes.items())
+		percentile = np.percentile([x[1] for x in data], percentile_threshold)
+		filtered_data = [x for x in data if x[1] >= percentile]
+		filtered_data.sort(key=lambda x: x[1], reverse=True)
+		valid_tags = [x[0] for x in filtered_data]
+
+		if len(valid_tags) > n_clusters:
+			
+			if verbose : print('clustering is efficient, computing k-means')
+			X = M[valid_tags, :]
+			kmeans = KMeans(n_clusters=n_clusters)
+			kmeans.fit(X)
+
+			# encode tags to the closest top n vectors: we create tag pointer
+			if verbose : print('assinging a pointer to all tags')
+			cluster_centers = kmeans.cluster_centers_
+			index_cluster_centers = self.compute_index(data=cluster_centers, k=1)
+			
+			tag_pointers = dict()
+			for tag_name in tqdm(self.tag_list, disable=False):
+				tag_vector = M[self.tag2index[tag_name]]
+				tag_index = self.search_index(tag_vector, index_cluster_centers, k=1)[0]
+				tag_pointers[tag_name] = tag_index
+
+		else:
+			if verbose : print('clustering is not efficient, returning regular tags')
+			tag_pointers = {self.tag_list[index]:index for index in range(len(self.tag_list))}
+
+		M = cluster_centers
+		if quantize_M == True:
+			M = quantize_embeddings(
+				M,
+				precision=self.quantization
+			)
+   
+		return M, self.tag_list, tag_pointers
 
 	
 	def index_samples(self, sample_list):
@@ -77,22 +111,10 @@ class prep():
 		return tag2index, indexed_sample_list
 
 	
-	def load_M(self, df_M, covariate_transformation, cluster_M=False, cluster_percentile_threshold=0.95, n_clusters=1000, quantize_M=False):
-		
-		if cluster_M == True:
-			cluster_centers = self.compute_optimal_M(df_M, percentile_threshold=cluster_percentile_threshold, n_clusters=n_clusters)
-			self.dict_clusters, df_M = self.assign_cluster_id(df_M, cluster_centers, show_progress=True)
-		else:
-			self.dict_clusters = None
+	def load_M(self, M, tag_pointers, covariate_transformation, cluster_M=False, cluster_percentile_threshold=0.95, n_clusters=1000):
 
-		self.df_M = df_M
-		self.M = np.array(df_M['vector_tags'].tolist())
-		
-		if quantize_M == True:
-			self.M = quantize_embeddings(
-				self.M,
-				precision=self.quantization
-			)
+		self.M = M
+		self.tag_pointers = tag_pointers
 
 		# define transformation type on oneshot_tag_vector
 		self.n_tags = len(self.tag_list)
@@ -115,7 +137,7 @@ class prep():
 
 		elif self.covariate_transformation == 'dot_product':
 			pass
-	
+
 
 	def adjust_oneshot_vector(self, onehot_covariate_vector):
 		'This function is called each time we perform a one_hot encoding'
@@ -127,4 +149,3 @@ class prep():
 			new_vector = self.pca.transform(onehot_covariate_vector.reshape(1, len(self.tag_list)))[0]
 
 		return new_vector
-

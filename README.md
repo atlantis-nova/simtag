@@ -61,7 +61,6 @@ Our first step will be to import and initiate the **simtag object**.
 from simtag.filter import simtag_filter
 
 # initiate engine
-# initiate engine
 engine = simtag_filter(
     sample_list=sample_list,
     model_name='sentence-transformers/all-MiniLM-L6-v2'
@@ -71,30 +70,29 @@ We can now use all modules on top of the engine instance.
 
 ### computing the co-occurence matrix
 
-Our next step is to generate the relationship matrix - we have added the option to compute the co-occurence matrix from the library (note that I am using **Michelangiolo similarity** as a mean to computing it, which is not a highly scalable option, but the same relationship can be extracted with a variety of more advanced methods, such as neural network, ex. Embeddings), which stores the relationship between existing pair of samples using IoU (Intersection over Union).
+Our next step is to generate the relationship matrix - (this version of the model no longer supports the computation of the co-occurence matrix, only the calculation of vectors using a pre-trained model).
+
+For our firs step, we will need to compute the vector of each tag, which we will store in a matrix called M. This matrix will be used to calculate the samples vector, while the pointers link each tag with its corresponding vector stored in M.
+
+Because, in some use cases, the number of tags could reach an unsustainable amount (the Steam example reaches 53.300, which performs very well in terms of accuracy, but substantially slows all the encoding processes), we can maintain a stable size of the vector by using k-means clustering, and capping the vector length to 1000 (an arbitrary number that you can change).
 
 ```
-# if not existing, compute M
-M, df_M = engine.compute_M()
-processing tags: 100%|██████████| 446/446 [1:18:52<00:00, 10.61s/it]
+# compute both M and pointers
+M, valid_tags, pointers = engine.compute_optimal_M(verbose=True, n_clusters=1000)
+engine.load_M(M, tag_pointers, covariate_transformation='dot_product')
 ```
-Be mindful of storing the metrix in a parquet file for quick retrieval, considering the long time it may be required to compute it again.
+Be mindful of storing both M and pointers for quick retrieval, considering the long time it may be required to compute it again.
 ```
-df_M.to_parquet('M.parquet')
+# store pre-computed files
+engine.npy_save(M, 'notebooks/twitter-news/M_quantized')
+engine.json_save(pointers, 'notebooks/twitter-news/pointers')
 ```
-Once you store the matrix, this process only has to be done once, as you can now retrieve it and store it into engine with the following code:
+Once you have stored the files, this process only has to be done once, as you can now retrieve it and store it into engine with the following code:
 ```
-# if already existing, load M
-df_M = pd.read_parquet('notebooks/steam-games/M.parquet')
-engine.load_M(df_M, covariate_transformation='dot_product')
+# load pre-computed files
+M = engine.npy_load('notebooks/twitter-news/M_quantized')
+pointers = engine.json_load('notebooks/twitter-news/pointers')
 ```
-For convenience, we will use df_M to store and retrieve the relational matrix, however, in the backprocess of the library, this will be converted into a numpy array. Essentially, df_M is used as a wrapper for ease of use. The same format can be built using pre-trained encoders (lookt at twitter-news **for a scalable example on 53.300 tags**):
-
-![alt text](files/df_M-example.png)
-
-Let us visualize our co-occurrence matrix **in a much more comprehensible format** (extra code in the steam-games notebook):
-
-![alt text](files/relationship-matrix.png)
 
 ### compute NHSW (navigable hierarchical small world)
 
@@ -107,7 +105,7 @@ We can now perform a **semantic tag search** on our samples.
 
 ## naive
 
-This format of **semantic tag search** assigns an equal weight to each of our query tags:
+This format of **covariate search** assigns an equal weight to each of our query tags:
 
 ```
 query_tag_dict = [ 'Shooter', 'Dark Fantasy', 'Sci-fi']
@@ -115,7 +113,7 @@ query_tag_dict = [ 'Shooter', 'Dark Fantasy', 'Sci-fi']
 # perform search
 query_vector = engine.encode_query(list_tags=query_tag_dict, allow_new_tags=False, print_new_tags=True)
 indices, search_results = engine.soft_tag_filtering(nbrs_covariate, sample_list, query_vector)
-for s in search_results[0:5]:
+for s in search_results:
     print(s)
 ```
 The first result (k=5, so there will be other 4 we can explore) looks like it contains all our tags, and, additional tags that are related to our query tags.
@@ -131,7 +129,7 @@ The first result (k=5, so there will be other 4 we can explore) looks like it co
 
 ## weighted
 
-On the contrary, this format of **semantic tag search** assigns a different weight to each of our query tags. Because we are combining the vectors after performing the **covariate encoding** we can easily combine them using different weights:
+On the contrary, this format of **covariate search** assigns a different weight to each of our query tags. Because we are combining the vectors after performing the **covariate encoding** we can easily combine them using different weights:
 
 ```
 query_tag_dict = {
@@ -143,7 +141,7 @@ query_tag_dict = {
 # perform search
 query_vector = engine.encode_query(dict_tags=query_tag_dict)
 indices, search_results = engine.soft_tag_filtering(nbrs_covariate, sample_list, query_vector)
-for s in search_results[0:5]:
+for s in search_results:
     print(s)
 ```
 Hopefully, we can see quite clearly how the tags of te returned sample are more related to Open World, rather than Shooter:

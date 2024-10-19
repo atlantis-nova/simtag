@@ -3,12 +3,13 @@ from .utils.search import search
 from .utils.validate import validate
 from .utils.clustering import clustering
 from .utils.encode import encode
+from .utils.IO import IO
 from sklearn.neighbors import NearestNeighbors
 
 # functions
 from sentence_transformers import SentenceTransformer
 
-class simtag_filter(prep, encode, clustering, search, validate):
+class simtag_filter(prep, encode, clustering, search, validate, IO):
 	
 	def __init__(self, sample_list=None, tag_list=None, model_name=None, quantization=None):
 
@@ -21,12 +22,14 @@ class simtag_filter(prep, encode, clustering, search, validate):
 		else:
 			self.tag_list = sorted(list(set([x for xs in self.sample_list for x in xs])))
 
+		self.tag2index = {self.tag_list[x]:x for x in range(len(self.tag_list))}
+
 		if model_name is not None:
 			self.model = SentenceTransformer(model_name, device='cpu')
 
 		if quantization is not None:
 			self.quantization = 'int8'
-
+   
 	
 	def encode(self, input):
 		"""

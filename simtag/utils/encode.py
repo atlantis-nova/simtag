@@ -16,12 +16,10 @@ class encode():
 		def encode_sample(list_tags):
 
 			def find_closest_index(tag):
-			
-				if self.dict_clusters is not None:
-					index = self.dict_clusters[tag]
+				if self.tag_pointers is not None:
+					index = self.tag_pointers[tag]
 				else:
 					index = self.tag_list.index(tag)	
-
 				return index
 			
 			# assign one_hot index to each tag
@@ -54,10 +52,10 @@ class encode():
 
 	def encode_query(self, list_tags=None, dict_tags=None, allow_new_tags=False, print_new_tags=False, skip_adjust=False):
 
-		def find_closest_index(tag, allow_new_tags, dict_clusters=None):
+		def find_closest_index(tag, allow_new_tags, tag_pointers=None):
 
-			if self.dict_clusters is not None and tag in self.dict_clusters:
-				index = dict_clusters[tag]
+			if self.tag_pointers is not None and tag in self.tag_pointers:
+				index = tag_pointers[tag]
 			elif tag in self.tag_list:
 				index = self.tag_list.index(tag)
 			else:
@@ -68,7 +66,7 @@ class encode():
 					index = int(index[0])
 
 					if print_new_tags:
-						if self.dict_clusters is not None:
+						if self.tag_pointers is not None:
 							cluster_tags = self.list_cluster_tags(index)
 							print(tag, '->', cluster_tags)
 						else:
@@ -86,13 +84,13 @@ class encode():
 
 		if list_tags is not None:
 			for tag in list_tags:
-				index = find_closest_index(tag, allow_new_tags, self.dict_clusters)
+				index = find_closest_index(tag, allow_new_tags, self.tag_pointers)
 				onehot_covariate_vector[index] = 1
 				tags_index.append(index)
 
 		elif dict_tags is not None:
 			for tag in [*dict_tags.keys()]:
-				index = find_closest_index(tag, allow_new_tags, self.dict_clusters)
+				index = find_closest_index(tag, allow_new_tags, self.tag_pointers)
 				onehot_covariate_vector[index] = 1 * dict_tags[tag]
 				tags_index.append(index)
 
