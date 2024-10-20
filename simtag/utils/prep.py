@@ -23,10 +23,23 @@ class prep():
 		return optimal_components
 
 
-	def compute_optimal_M(self, percentile_threshold=95, n_clusters=1000, quantize_M=False, visualize=False, verbose=False):
+	def compute_optimal_M(self, sample_list=None, tag_list=None, quantize_M=False,  percentile_threshold=95, n_clusters=1000, visualize=False, verbose=False):
 		"""
+		We first process the dataset and extract all tags
 		Compress the one_hot vector into a smaller set of clusters
 		"""
+  
+  		# process samples
+		if sample_list is not None:
+			self.sample_list = sample_list
+
+  		# process tags
+		if tag_list is not None:
+			self.tag_list = tag_list
+		else:
+			self.tag_list = sorted(list(set([x for xs in self.sample_list for x in xs])))
+		self.tag2index = {self.tag_list[x]:x for x in range(len(self.tag_list))}
+  
 		tag_vectors = list()
 		for tag_index in tqdm(range(len(self.tag_list)), disable=False):
 			tag = self.tag_list[tag_index]
@@ -75,17 +88,21 @@ class prep():
 			cluster_centers = kmeans.cluster_centers_
 			index_cluster_centers = self.compute_index(data=cluster_centers, k=1)
 			
+			# we assign each tag to the new pointer
 			tag_pointers = dict()
 			for tag_name in tqdm(self.tag_list, disable=False):
 				tag_vector = M[self.tag2index[tag_name]]
 				tag_index = self.search_index(tag_vector, index_cluster_centers, k=1)[0]
 				tag_pointers[tag_name] = tag_index
-				M = cluster_centers
+			
+			# at the end of the calculation, we save the compressed M
+			M = cluster_centers
 
 		else:
 			if verbose : print('clustering is not efficient, returning regular tags')
 			tag_pointers = {self.tag_list[index]:index for index in range(len(self.tag_list))}
 		
+		# TODO: move outise. Is just 150 kb, for now can be kept inside the model
 		if quantize_M == True:
 			M = quantize_embeddings(
 				M,
@@ -117,7 +134,7 @@ class prep():
 		self.tag_pointers = tag_pointers
 
 		# define transformation type on oneshot_tag_vector
-		self.n_tags = len(self.tag_list)
+		self.n_tags = max([*tag_pointers.values()])+1
 		self.M_vector_length = self.M.shape[1]
 		self.covariate_transformation = covariate_transformation
 

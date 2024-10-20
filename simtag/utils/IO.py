@@ -36,13 +36,13 @@ class IO():
             astype_format = np.int8
             
         # partition_size = len(array) // n  # TODO : remove?
-        partitions = np.split(array, n)
+        partitions = np.split(array.astype(astype_format), n)
         
         for i, partition in enumerate(partitions):
             if n == 1:
-                np.save(f'{path}.npy', partition).astype(astype_format)
+                np.save(f'{path}.npy', partition)
             elif n > 1:
-                np.save(f'{path}_{i}.npy', partition).astype(astype_format)
+                np.save(f'{path}_{i}.npy', partition)
             
 
     def npy_load(self, path, n=1):
