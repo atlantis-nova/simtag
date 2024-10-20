@@ -28,15 +28,21 @@ class IO():
         return json.loads(open(f'{path_prefix}.json').read())  
             
             
-    def npy_save(self, array, path, n=1):
+    def npy_save(self, array, path, n=1, astype_format='float32'):
+        
+        if astype_format == 'float32':
+            astype_format = np.float32
+        elif astype_format == 'int8':
+            astype_format = np.int8
+            
         # partition_size = len(array) // n  # TODO : remove?
         partitions = np.split(array, n)
         
         for i, partition in enumerate(partitions):
             if n == 1:
-                np.save(f'{path}.npy', partition)
+                np.save(f'{path}.npy', partition).astype(astype_format)
             elif n > 1:
-                np.save(f'{path}_{i}.npy', partition)
+                np.save(f'{path}_{i}.npy', partition).astype(astype_format)
             
 
     def npy_load(self, path, n=1):
