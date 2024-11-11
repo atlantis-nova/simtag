@@ -3,23 +3,24 @@ from tqdm import tqdm
 
 class encode():
 
-	def quantize(self, arr):
+	def quantize(self, array, left_percentile):
 		# scale the array to the range of int8 (-127 to 127)
-		scaled_arr = (arr - arr.min()) / (arr.max() - arr.min()) * 254 - 127
+		min_ = np.percentile(array, left_percentile)
+		max_ = np.percentile(array, 100-left_percentile)
+
+		scaled_arr = (array - min_) / (max_ - min_) * 254 - 127
 		rounded_arr = np.round(scaled_arr)
 		quantized_arr = rounded_arr.astype(np.int8)
 		return quantized_arr
 
 
-	def encode_samples(self, sample_list, quantize_samples=False, show_progress=True):
+	def encode_samples(self, sample_list, quantize_samples=False, quantization_left_percentile=1, show_progress=True):
 
 		def encode_sample(list_tags):
 
 			def find_closest_index(tag):
 				if self.tag_pointers is not None:
 					index = self.tag_pointers[tag]
-				else:
-					index = self.tag_list.index(tag)	
 				return index
 			
 			# assign one_hot index to each tag
@@ -43,12 +44,14 @@ class encode():
 		samples_encoded = list()
 		for sample_encoded in tqdm(sample_list, desc="processing samples", disable=disable_progress):
 			samples_encoded.append(encode_sample(sample_encoded))
+		samples_encoded = np.array(samples_encoded)
 
 		if quantize_samples:
-			samples_encoded = [self.quantize(x) for x in samples_encoded]
+			# samples_encoded = [self.quantize(x) for x in samples_encoded]
+			samples_encoded = self.quantize(samples_encoded, left_percentile=quantization_left_percentile)
 
 		# we convert list to numpy array
-		return np.array(samples_encoded)
+		return samples_encoded
 		
 
 	def encode_query(self, list_tags=None, dict_tags=None, allow_new_tags=False, print_new_tags=False, skip_adjust=False):
@@ -57,8 +60,6 @@ class encode():
 
 			if self.tag_pointers is not None and tag in self.tag_pointers:
 				index = tag_pointers[tag]
-			elif tag in self.tag_list:
-				index = self.tag_list.index(tag)
 			else:
 				if allow_new_tags:
 					# for each non-existing tag, find the closest one
@@ -70,10 +71,6 @@ class encode():
 						if self.tag_pointers is not None:
 							cluster_tags = self.list_cluster_tags(index)
 							print(tag, '->', cluster_tags)
-						else:
-							print(tag, '->', self.tag_list[index])
-							
-
 				else:
 					raise Exception('input tag is not in list')
 			return index

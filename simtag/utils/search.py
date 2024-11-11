@@ -36,18 +36,30 @@ class search():
 		elif query_tag_dict is not None:
 			query_vector = self.encode_query(dict_tags=query_tag_dict, allow_new_tags=allow_new_tags, print_new_tags=print_new_tags, skip_adjust=skip_adjust)
 
-		indices = self.search_index(query_vector, index_covariate, k=k)
-		search_results = [sample_list[x] for x in indices]
+		if sample_list is not None:
 
-		return indices, search_results
-	
+			indices = self.search_index(query_vector, index_covariate, k=k)
+			search_results = [sample_list[x] for x in indices]
+			return indices, search_results
+		
+		else:
+
+			indices = self.search_index(query_vector, index_covariate, k=k)
+			return indices
+
 
 	def semantic_covariate_search(self, index_covariate=None, sample_list=None, query=None, k=None):
      
 		if self.covariate_transformation != 'dot_product':
 			raise BaseException('semantic-covariate search is not compatible with PCA transformation')
+		
+		if sample_list is not None:
 
-		indices = self.search_index(self.encode(query), index_covariate, k=k)
-		search_results = [sample_list[x] for x in indices][0:k]
-
-		return indices, search_results
+			indices = self.search_index(self.encode(query), index_covariate, k=k)
+			search_results = [sample_list[x] for x in indices][0:k]
+			return indices, search_results
+	
+		else:
+			
+			indices = self.search_index(self.encode(query), index_covariate, k=k)
+			return indices
