@@ -5,16 +5,16 @@ Published: **2nd September 2024**
 
 # simtag, covariate search made easy
 
-We aim introduce the following technologies:
+[Visit us](https://simsearch.co/) for more information about development. We aim to introduce the following technologies:
 - **covariate search**
-- **encrypted coviarate search**
+- **encrypted covariate search**
 - **covariate tagging**
 
 The following library [is based on the following technical article](https://medium.com/towards-data-science/introducing-semantic-tag-filtering-enhancing-retrieval-with-tag-similarity-4f1b2d377a10), and aims to expand semantic search **from the limited one-to-one approach** into a **many-to-many approach (covariate search)**, using vector-encoded relationships to maximize the overall relevance of the tags.
 
 ![alt text](files/search-comparison.png)
 
-This search aims to improve the classic **hard filtering** , which lacks flexibility in providing alternative results when the **regular search cannot retrieve enough samples**.
+This search aims to improve the classic **hard filtering**, which lacks flexibility in providing alternative results when the **regular search cannot retrieve enough samples**.
 
 ![alt text](files/missing-results.png)
 
