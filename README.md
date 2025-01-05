@@ -3,6 +3,8 @@ Algorithm: **Covariate Search**<br>
 Author: **Michelangiolo Mazzeschi**<br>
 Published: **2nd September 2024**
 
+***There is an identical term used in statistics, however, this approach is used on top of vector retrieval, and not to compute feature importance
+
 # simtag, covariate search made easy
 
 [Visit us](https://simsearch.co/) for more information about development. We aim to introduce the following technologies:
