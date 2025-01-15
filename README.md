@@ -3,7 +3,7 @@ Algorithm: **Covariate Search**<br>
 Author: **Michelangiolo Mazzeschi**<br>
 Published: **2nd September 2024**
 
-***There is an identical term used in statistics, however, this approach is used on top of vector retrieval, and not to compute feature importance
+***There is an identical term (covariate modeling) used in statistics, however, this approach is used on top of vector retrieval, and not to compute feature importance
 
 # simtag, covariate search made easy
 
@@ -24,6 +24,8 @@ This search aims to improve the classic **hard filtering**, which lacks flexibil
 
 This algorithm uses a new encoding method called **covariate encoding**, which employs an optional PCA module to provide high scalability to semantic tag filtering.
 
+### Using **Dot Product**
+
 To provide better insights into the definitions:
 - **sample**: the list of tags associated with an element in our database (ex. a Steam game). We search through our collection of thousands of existing samples.
 - **query**: the list of tags that the user has input, the objective is to find a sample matching those tags.
@@ -32,7 +34,16 @@ In most encoding algorithms, we encode both queries and samples using the same a
 
 ![alt text](files/covariate-encoding.png)
 
-This version of the encoding process differs from previous version, as it is now mathematically accurate
+This version of the encoding process differs from previous versions, as it is now mathematically accurate
+
+### Using Vector Mean
+(Published by **Michelangiolo Mazzeschi**, 16th January 2025)
+
+After careful consideration and experimenting, we have discovered that the **covariate encoding dot product architecture** (outlined in the previous section), can be replicated by averaging the vector of each individual tag.<br>
+This new approach is an alternative variation of the original dot product encoding 
+While results between both approaches change, both return valid search results. 
+
+![image](https://github.com/user-attachments/assets/d051e6be-d7fe-4013-8e2d-d7c2681b67ac)
 
 ### PCA module
 
@@ -40,7 +51,7 @@ The encoding algorithm behaves differently when a PCA module has been applied to
 
 ![alt text](files/pca-covariate-encoding.png)
 
-We are still in the process of understanding what are some of the improvements that take plce during this process.
+We are still in the process of understanding which are some of the improvements that take place during this process.
 
 # using the simtag library
 
